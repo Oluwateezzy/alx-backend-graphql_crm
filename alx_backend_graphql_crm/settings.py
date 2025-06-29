@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_filters",
     "graphene_django",
     "crm",
 ]
@@ -124,4 +125,8 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-GRAPHENE = {"SCHEMA": "alx_backend_graphql_crm.schema.schema"}
+GRAPHENE = {
+    "SCHEMA": "alx_backend_graphql_crm.schema.schema",
+    "SCHEMA_OUTPUT": "schema.graphql",  # Optional: outputs schema file
+    "SCHEMA_INDENT": 2,
+}

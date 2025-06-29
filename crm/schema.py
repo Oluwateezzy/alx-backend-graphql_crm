@@ -5,6 +5,10 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 import re
 
+from graphene_django.filter import DjangoFilterConnectionField
+from graphene import relay, String, InputObjectType, Argument
+from .filters import CustomerFilter, ProductFilter, OrderFilter
+
 
 # Type Definitions
 class CustomerType(DjangoObjectType):
@@ -219,6 +223,84 @@ class CreateOrder(graphene.Mutation):
             return CreateOrder(
                 order=None, message=f"An error occurred: {str(e)}", success=False
             )
+
+
+class CustomerNode(DjangoObjectType):
+    class Meta:
+        model = Customer
+        interfaces = (relay.Node,)
+        filterset_class = CustomerFilter
+
+
+class ProductNode(DjangoObjectType):
+    class Meta:
+        model = Product
+        interfaces = (relay.Node,)
+        filterset_class = ProductFilter
+
+
+class OrderNode(DjangoObjectType):
+    class Meta:
+        model = Order
+        interfaces = (relay.Node,)
+        filterset_class = OrderFilter
+
+    customer = graphene.Field(CustomerType)
+    products = graphene.List(ProductType)
+    total_amount = graphene.Decimal()
+
+    def resolve_customer(self, info):
+        return self.customer
+
+    def resolve_products(self, info):
+        return self.products.all()
+
+    def resolve_total_amount(self, info):
+        return self.calculate_total()
+
+
+class Query(graphene.ObjectType):
+    customer = relay.Node.Field(CustomerNode)
+    all_customers = DjangoFilterConnectionField(
+        CustomerNode,
+        order_by=String(),
+        description="Filterable and sortable list of customers",
+    )
+
+    product = relay.Node.Field(ProductNode)
+    all_products = DjangoFilterConnectionField(
+        ProductNode,
+        order_by=String(),
+        description="Filterable and sortable list of products",
+    )
+
+    order = relay.Node.Field(OrderNode)
+    all_orders = DjangoFilterConnectionField(
+        OrderNode,
+        order_by=String(),
+        description="Filterable and sortable list of orders",
+    )
+
+    def resolve_all_customers(self, info, **kwargs):
+        order_by = kwargs.get("order_by")
+        qs = Customer.objects.all()
+        if order_by:
+            qs = qs.order_by(order_by)
+        return qs
+
+    def resolve_all_products(self, info, **kwargs):
+        order_by = kwargs.get("order_by")
+        qs = Product.objects.all()
+        if order_by:
+            qs = qs.order_by(order_by)
+        return qs
+
+    def resolve_all_orders(self, info, **kwargs):
+        order_by = kwargs.get("order_by")
+        qs = Order.objects.all()
+        if order_by:
+            qs = qs.order_by(order_by)
+        return qs
 
 
 class Mutation(graphene.ObjectType):
