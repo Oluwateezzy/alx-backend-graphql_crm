@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Get the directory where the script resides
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DJANGO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cwd)"
+DJANGO_DIR="$(cd "$SCRIPT_DIR/.." && cwd)"
 
 # Log file
 LOG_FILE="/tmp/customer_cleanup_log.txt"
@@ -13,6 +13,8 @@ echo "[$TIMESTAMP] Starting customer cleanup..." >> "$LOG_FILE"
 if [ ! -f "$DJANGO_DIR/manage.py" ]; then
   echo "[$TIMESTAMP] ERROR: manage.py not found in $DJANGO_DIR" >> "$LOG_FILE"
   exit 1
+else
+  echo "[$TIMESTAMP] Found manage.py in $DJANGO_DIR" >> "$LOG_FILE"
 fi
 
 # Run the Django shell to delete inactive customers
