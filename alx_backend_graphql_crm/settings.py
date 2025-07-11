@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "django_filters",
     "graphene_django",
+    "django_crontab",
     "crm",
 ]
 
@@ -130,3 +131,7 @@ GRAPHENE = {
     "SCHEMA_OUTPUT": "schema.graphql",  # Optional: outputs schema file
     "SCHEMA_INDENT": 2,
 }
+
+CRONJOBS = [
+    ("*/5 * * * *", "crm.cron.log_crm_heartbeat"),
+]
