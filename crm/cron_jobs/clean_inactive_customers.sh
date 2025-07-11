@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Get the directory where the script resides
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && cwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DJANGO_DIR="$(cd "$SCRIPT_DIR/.." && cwd)"
 
 # Log file
