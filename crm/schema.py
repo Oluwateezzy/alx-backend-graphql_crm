@@ -23,6 +23,30 @@ class ProductType(DjangoObjectType):
         fields = "__all__"
 
 
+class UpdateLowStockProducts(graphene.Mutation):
+    class Arguments:
+        pass
+
+    updated_products = graphene.List(ProductType)
+    message = graphene.String()
+
+    def mutate(self, info):
+        # Get products with stock < 10
+        low_stock_products = Product.objects.filter(stock__lt=10)
+
+        # Update stock for each product
+        updated_products = []
+        for product in low_stock_products:
+            product.stock += 10
+            product.save()
+            updated_products.append(product)
+
+        return UpdateLowStockProducts(
+            updated_products=updated_products,
+            message=f"Successfully updated {len(updated_products)} products",
+        )
+
+
 class OrderType(DjangoObjectType):
     class Meta:
         model = Order
