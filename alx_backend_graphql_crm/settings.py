@@ -127,7 +127,7 @@ STATIC_URL = "static/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 
-GRAPHENE = {"SCHEMA": "crm.schema.schema"}  # We'll define this later
+GRAPHENE = {"SCHEMA": "crm.schema.schema"}
 
 CRONJOBS = [
     ("0 */12 * * *", "crm.cron.update_low_stock"),
