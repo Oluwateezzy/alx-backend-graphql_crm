@@ -46,13 +46,6 @@ class UpdateLowStockProducts(graphene.Mutation):
             message=f"Successfully updated {len(updated_products)} products",
         )
 
-
-class Mutation(graphene.ObjectType):
-    update_low_stock_products = UpdateLowStockProducts.Field()
-
-
-schema = graphene.Schema(mutation=Mutation)
-
 class OrderType(DjangoObjectType):
     class Meta:
         model = Order
@@ -334,6 +327,7 @@ class Query(graphene.ObjectType):
 
 
 class Mutation(graphene.ObjectType):
+    update_low_stock_products = UpdateLowStockProducts.Field()
     create_customer = CreateCustomer.Field()
     bulk_create_customers = BulkCreateCustomers.Field()
     create_product = CreateProduct.Field()
