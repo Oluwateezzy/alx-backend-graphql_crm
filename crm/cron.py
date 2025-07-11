@@ -37,56 +37,77 @@ def log_crm_heartbeat():
 
 
 def update_low_stock():
-    """Updates low stock products via GraphQL mutation and logs results"""
-    log_file = "/tmp/low_stock_updates_log.txt"
+    """
+    Updates low stock products via GraphQL mutation and logs results.
+    Runs every 12 hours via django-crontab.
+    Logs to /tmp/low_stock_updates_log.txt with timestamped entries.
+    """
+    LOG_FILE = "/tmp/low_stock_updates_log.txt"
+    GRAPHQL_ENDPOINT = "http://localhost:8000/graphql"
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Configure GraphQL client
-    transport = RequestsHTTPTransport(
-        url="http://localhost:8000/graphql",
-        verify=True,
-        retries=3,
-    )
-    client = Client(transport=transport, fetch_schema_from_transport=True)
-
-    # Define the mutation
-    mutation = gql(
-        """
-        mutation {
-            updateLowStockProducts {
-                updatedProducts {
-                    id
-                    name
-                    stock
-                }
-                message
-            }
-        }
-    """
-    )
-
     try:
-        # Execute the mutation
+        # Configure GraphQL client with timeout
+        transport = RequestsHTTPTransport(
+            url=GRAPHQL_ENDPOINT,
+            verify=True,
+            retries=3,
+            timeout=10,
+        )
+        client = Client(
+            transport=transport, fetch_schema_from_transport=True, execute_timeout=20
+        )
+
+        # Define the mutation with proper formatting
+        mutation = gql(
+            """
+            mutation UpdateLowStock {
+                updateLowStockProducts {
+                    updatedProducts {
+                        id
+                        name
+                        stock
+                    }
+                    message
+                }
+            }
+        """
+        )
+
+        # Execute mutation
         result = client.execute(mutation)
-        data = result["updateLowStockProducts"]
+        data = result.get("updateLowStockProducts", {})
 
         # Prepare log message
-        log_message = f"[{timestamp}] {data['message']}\n"
+        log_lines = [
+            f"\n[{timestamp}] Stock Update Report",
+            f"Status: {data.get('message', 'No message returned')}",
+            "Updated Products:",
+        ]
 
-        # Log details of each updated product
-        for product in data["updatedProducts"]:
-            log_message += (
-                f"Product: {product['name']} | " f"New Stock: {product['stock']}\n"
+        # Add product details
+        for product in data.get("updatedProducts", []):
+            log_lines.append(
+                f"- {product['name']}: Stock updated to {product['stock']} (ID: {product['id']})"
             )
 
+        # Count of updated products
+        log_lines.append(
+            f"Total products updated: {len(data.get('updatedProducts', []))}"
+        )
+
         # Write to log file
-        with open(log_file, "a") as f:
-            f.write(log_message)
+        with open(LOG_FILE, "a") as f:
+            f.write("\n".join(log_lines) + "\n")
 
         return True
 
     except Exception as e:
-        error_msg = f"[{timestamp}] Error updating low stock products: {str(e)}\n"
-        with open(log_file, "a") as f:
+        error_msg = (
+            f"[{timestamp}] CRITICAL: Failed to update low stock products\n"
+            f"Error: {str(e)}\n"
+            f"GraphQL Endpoint: {GRAPHQL_ENDPOINT}\n"
+        )
+        with open(LOG_FILE, "a") as f:
             f.write(error_msg)
         return False
